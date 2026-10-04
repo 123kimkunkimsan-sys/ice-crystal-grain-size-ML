@@ -1,4 +1,4 @@
-# ubiquitous-happiness
+# ice-crystal-grain-size-ML
 
 ## 氷結晶粒径予測（ResNet回帰）パイプライン
 
