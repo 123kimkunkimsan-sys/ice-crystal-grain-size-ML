@@ -1,0 +1,6 @@
+stardist
+tensorflow
+numpy
+pandas
+pillow
+matplotlib
