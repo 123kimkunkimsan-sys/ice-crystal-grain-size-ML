@@ -1,0 +1,7 @@
+cellpose
+torch
+torchvision
+numpy
+pandas
+pillow
+matplotlib
