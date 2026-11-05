@@ -1,0 +1,9 @@
+torch
+torchvision
+sam2
+ultralytics
+sahi
+numpy
+pandas
+pillow
+matplotlib
