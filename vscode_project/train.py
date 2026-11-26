@@ -12,7 +12,14 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 import config
-from dataset import CrystalDataset, load_valid_dataset, split_dataset, test_transform, train_transform
+from dataset import (
+    CrystalDataset,
+    load_valid_dataset,
+    split_dataset,
+    split_dataset_by_folder,
+    test_transform,
+    train_transform,
+)
 from model import build_model
 
 
@@ -25,6 +32,13 @@ def parse_args():
     p.add_argument("--batch-size-train", type=int, default=config.BATCH_SIZE_TRAIN)
     p.add_argument("--batch-size-test", type=int, default=config.BATCH_SIZE_TEST)
     p.add_argument("--num-workers", type=int, default=config.NUM_WORKERS)
+    p.add_argument("--split-mode", choices=["random", "folder"], default="random",
+                    help="random: 結晶単位のランダム分割(従来通り)。"
+                         "folder: 実験回(source_folder)単位で分割し、未知の回への汎化を検証する。")
+    p.add_argument("--train-split-csv", type=str, default=str(config.TRAIN_SPLIT_CSV),
+                    help="train split の保存先。split-mode=folderで検証するときは、"
+                         "既存のtrain_split.csv/test_split.csvを上書きしないよう別名を指定すること。")
+    p.add_argument("--test-split-csv", type=str, default=str(config.TEST_SPLIT_CSV))
     return p.parse_args()
 
 
@@ -37,9 +51,12 @@ def main():
     print(f"デバイス: {device}  (AMP: {use_amp})")
 
     df_all = load_valid_dataset(args.dataset_csv)
-    train_df, test_df = split_dataset(df_all)
-    train_df.to_csv(config.TRAIN_SPLIT_CSV, index=False, encoding="utf-8-sig")
-    test_df.to_csv(config.TEST_SPLIT_CSV, index=False, encoding="utf-8-sig")
+    if args.split_mode == "folder":
+        train_df, test_df = split_dataset_by_folder(df_all)
+    else:
+        train_df, test_df = split_dataset(df_all)
+    train_df.to_csv(args.train_split_csv, index=False, encoding="utf-8-sig")
+    test_df.to_csv(args.test_split_csv, index=False, encoding="utf-8-sig")
 
     train_loader = DataLoader(CrystalDataset(train_df, train_transform),
                                batch_size=args.batch_size_train, shuffle=True,

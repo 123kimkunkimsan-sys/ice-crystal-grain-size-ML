@@ -91,3 +91,31 @@ def split_dataset(df_all, train_ratio=TRAIN_RATIO, seed=SEED):
     test_df = df_all.iloc[perm[n_train:]].reset_index(drop=True)
     print(f"train: {len(train_df)}件 / test: {len(test_df)}件")
     return train_df, test_df
+
+
+def split_dataset_by_folder(df_all, train_ratio=TRAIN_RATIO, seed=SEED):
+    """結晶単位ではなく、実験回(source_folder)単位でtrain/testを分割する。
+
+    同じ回の結晶が学習・testの両方に混ざらないため、「学習時に一切見ていない
+    実験回」に対する汎化性能を測れる（通常のsplit_datasetより厳しいテスト）。
+    """
+    if "source_folder" not in df_all.columns:
+        raise ValueError(
+            "source_folder列が見つかりません。dataset_clean.csvを使ってください"
+            "（crystal_dataset_pipeline.ipynb系で生成したCSVにのみ含まれます）。"
+        )
+    folders = sorted(df_all["source_folder"].unique().tolist())
+    torch.manual_seed(seed)
+    perm = torch.randperm(len(folders)).tolist()
+    n_train_folders = max(1, round(len(folders) * train_ratio))
+    train_folders = {folders[i] for i in perm[:n_train_folders]}
+    test_folders = {folders[i] for i in perm[n_train_folders:]}
+
+    train_df = df_all[df_all["source_folder"].isin(train_folders)].reset_index(drop=True)
+    test_df = df_all[df_all["source_folder"].isin(test_folders)].reset_index(drop=True)
+    print(f"実験回: train {len(train_folders)}回 / test {len(test_folders)}回")
+    print(f"train: {len(train_df)}件 / test: {len(test_df)}件")
+    print("testに回した実験回:")
+    for f in sorted(test_folders):
+        print(f"  - {f}")
+    return train_df, test_df
